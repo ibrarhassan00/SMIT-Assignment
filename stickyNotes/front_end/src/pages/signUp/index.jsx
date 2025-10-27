@@ -1,19 +1,43 @@
 import React, { use, useState } from 'react'
-import { Link } from 'react-router-dom';
+import { Link, Navigate , useNavigate} from 'react-router-dom';
+import axios from 'axios';
 const SignUpPage = () => {
+
+const navigate = useNavigate();
 
 const [name, setName] = useState("");
 const [age, setAge] = useState("");
 const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
 
-const userSignUp = ()=>{
+const userSignUp = async()=>{
 
-console.log(name);
-console.log(age);
-console.log(email);
-console.log(password);
+try {
 
+if(!name || !age || !email || !password){
+return alert("Required Field Are Missing")
+}
+
+    const userObj ={
+    name,
+    age,
+    email,
+    password
+  }
+
+const response = await axios.post('http://localhost:8000/api/usersignup',userObj)
+
+
+
+if (response.data.status===false) {
+  console.log("Error:", response.data.message);
+  return alert(response.data.message)
+}
+console.log("Signup Successful:", response.data);
+navigate("/");
+} catch (error) {
+  console.log("Signup Failed:", error.message);
+}
 
 }
 
