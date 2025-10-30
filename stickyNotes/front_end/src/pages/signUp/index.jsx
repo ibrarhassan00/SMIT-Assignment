@@ -37,6 +37,7 @@ console.log("Signup Successful:", response.data);
 navigate("/");
 } catch (error) {
   console.log("Signup Failed:", error.message);
+  return alert("Error:", error.message)
 }
 
 }

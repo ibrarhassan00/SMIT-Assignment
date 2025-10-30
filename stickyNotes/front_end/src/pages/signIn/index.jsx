@@ -25,10 +25,10 @@ const SignInPage = () => {
 
       if (response.data.status === false) {
         console.log(response.data.status);
-
         return alert(response.data.message)
       }
-      localStorage.setItem("uid", "ibrar")
+      localStorage.setItem("uid", response.data.token)
+      console.log(response);
       alert("User Login User Successfully")
       navigate("/dashboard");
 

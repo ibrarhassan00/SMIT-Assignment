@@ -1,7 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
 import connectMongoDatabase from "./config/db.js";
-import userSignupRoute from "./routes/userRoute.js";
+import userAuth from "./routes/userRoute.js";
+import notesRoute from "./routes/notesRoute.js"
 import cors from "cors";
 
 const app = express();
@@ -12,7 +13,8 @@ connectMongoDatabase();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
-app.use(`/api`,userSignupRoute);
+app.use(`/api`,userAuth);
+app.use(`/api`,notesRoute);
 
 
 
