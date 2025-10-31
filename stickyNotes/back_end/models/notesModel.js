@@ -10,7 +10,7 @@ const noteSchema = new mongoose.Schema({
   },
   isDraft: {
     type: Boolean,
-    default: true,
+    default: false,
   },
   date: {
     type: Date,

@@ -21,7 +21,9 @@ if (response.data.status===false) {
   return alert(response.data.message)
 }
 
-setData(response.data.data)
+const filteredNotes = response.data.data.filter(note => note.isDraft === false);
+
+setData(filteredNotes);
 
 } catch (error) {
   console.log("Signup Failed:", error.message);
@@ -33,13 +35,69 @@ useEffect(()=>{
   getNotes()
 },[])
 
+  let editNotes = async (documentId) => {
+    try {
+      let title = prompt("Enter new title"); // Spelling theek ki
+      let content = prompt("Enter new Content"); // Spelling theek ki
+
+      if (title === null || content === null) {
+        console.log("Update cancelled by user.");
+        return;
+      }
+
+      let updatedObj = {
+        title,
+        content,
+      };
+      const response = await axios.put(
+        `http://localhost:8000/api/notes/${documentId}`,
+        updatedObj,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      getNotes();
+    } catch (error) {
+      console.log("Save Failed:", error.message);
+      alert("Error:", error.message);
+    }
+  };
+
+  let deleteNote = async (documentId) => {
+    try {
+      const response = await axios.delete(
+        `http://localhost:8000/api/notes/${documentId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      getNotes();
+    } catch (error) {
+      console.log("Save Failed:", error.message);
+      alert("Error:", error.message);
+    }
+  };
 
   return (
     <>
     <Navbar />
-{data.map((item)=>{
-return <NotesCard key={item._id} title={item.title} content={item.content} date={item.date} />
-})}
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-4 sm:px-8 py-6">
+            {data.map((item) => (
+              <NotesCard
+                key={item._id}
+                id={item._id}
+                title={item.title}
+                content={item.content}
+                date={item.date}
+                funEdit={editNotes}
+                funDeleteNote={deleteNote}
+              />
+            ))}
+          </div>
     </>
   )
 }
