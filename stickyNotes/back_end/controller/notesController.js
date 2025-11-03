@@ -13,7 +13,7 @@ export const createNote = async (req, res) => {
         })
         res.json({
             status: true,
-            message: response
+            data: response
         })
     } catch (error) {
         res.json({
@@ -48,9 +48,9 @@ export const updateNote = async (req, res) => {
         const noteId = req.params.id; 
         const loggedInUserId = req.user._id; 
         const updateData = req.body; 
-console.log(noteId);
-console.log(loggedInUserId);
-console.log(updateData);
+// console.log(noteId);
+// console.log(loggedInUserId);
+// console.log(updateData);
 
         
         const updatedNote = await NotesModel.findOneAndUpdate(

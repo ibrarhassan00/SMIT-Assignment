@@ -1,6 +1,6 @@
 
 
-let NotesCard = ({id, title , content , date , funEdit , funDeleteNote} )=>{
+let NotesCard = ({id, title , content , date , funEdit , funDeleteNote , item} )=>{
 
 const formattedDate = new Date(date).toLocaleString('en-US', {
     dateStyle: 'medium',
@@ -27,7 +27,7 @@ return(
         <button
           id={id}
           className="text-blue-600 hover:text-blue-800 font-medium"
-          onClick={() => funEdit(id)}
+          onClick={() => funEdit(item)}
         >
           Edit
         </button>

@@ -2,15 +2,23 @@ import React, { useEffect, useState } from "react";
 import Navbar from "../../components/navbar";
 import NotesCard from "../../components/notesCard";
 import axios from "axios";
+import Header from "../../components/header";
 
 const Dashboard = () => {
   const [draftId, setDraftId] = useState(null);
   const [data, setData] = useState([]);
   const token = localStorage.getItem("uid");
   const [dummyCard, setDummyCard] = useState(false);
-  let [title, setTitle] = useState("");
-  let [content, setContent] = useState("");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [isDraftData, setIsDraftData] = useState([]);
+  //Edit Section
+  const [editNote_id, setEditNote_id] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
 
+
+  // get all Data
   const getNotes = async () => {
     try {
       const response = await axios.get("http://localhost:8000/api/notes", {
@@ -18,68 +26,52 @@ const Dashboard = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-
       if (response.data.status === false) {
         console.log("Error:", response.data.message);
         return alert(response.data.message);
       }
-const filteredNotes = response.data.data.filter(note => note.isDraft === false);
-
-setData(filteredNotes);
+      const allNotes = response.data.data;
+      const filteredNotes = allNotes.filter((note) => note.isDraft === false);
+      setData(filteredNotes);
+      const forTrueIsDraft = allNotes.filter((note) => note.isDraft === true);
+      setIsDraftData(forTrueIsDraft);
     } catch (error) {
       console.log("Signup Failed:", error.message);
       return alert("Error:", error.message);
     }
   };
-
   useEffect(() => {
     getNotes();
   }, []);
 
-
-
-
-
-  const totalNotes = data.length+1;
-const savedNotes = data.filter(note => !note.isDraft).length;
-const draftNotes = data.filter(note => note.isDraft).length;
-
-  // Mock data for the statistics
-  const stats = [
-  {
-    title: "Total Notes",
-    value: totalNotes,
-    color: "text-blue-600",
-    bg: "bg-blue-100",
-  },
-  {
-    title: "Saved Notes",
-    value: savedNotes,
-    color: "text-green-600",
-    bg: "bg-green-100",
-  },
-  {
-    title: "Unsaved Notes",
-    value: draftNotes,
-    color: "text-red-600",
-    bg: "bg-red-100",
-  },
-];
-
-
-
-  let handleAddNewNoteClick = () => {
+  // active_new_note_creaction_card
+  let active_new_note_creaction_card = () => {
     setDummyCard(true);
   };
-
-  let handleSaveNote = async () => {
+  // Create Note
+  let saveNewNote = async () => {
     try {
+
+if(draftId){
+let finalObj = {
+        title,
+        content,
+        isDraft: false,
+      };
+  await axios.put(
+          `http://localhost:8000/api/notes/${draftId}`,
+          finalObj,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        console.log("Finally Saved!");
+}else{
       let noteObj = {
         title,
         content,
-        isDraft: false
+        isDraft: false,
       };
-
       const response = await axios.post(
         "http://localhost:8000/api/notes",
         noteObj,
@@ -89,47 +81,47 @@ const draftNotes = data.filter(note => note.isDraft).length;
           },
         }
       );
-
-      if (response.data.status === false) {
-        console.log("Error:", response.data.message);
-        return alert(response.data.message);
-      }
-
-      // ✅ Clear inputs and reload notes
+}
       setTitle("");
       setContent("");
-
       getNotes();
       setDummyCard(false);
+      setDraftId(null)
+      
     } catch (error) {
       console.log("Save Failed:", error.message);
       alert("Error:", error.message);
     }
   };
 
-  let editNotes = async (documentId) => {
+// Edit Section 
+  let editNotes = (item) => {
+    setEditNote_id(item._id);
+    setEditTitle(item.title);
+    setEditContent(item.content);
+  };
+  const saveEditNote = async (documentId) => {
     try {
-      let title = prompt("Enter new title"); // Spelling theek ki
-      let content = prompt("Enter new Content"); // Spelling theek ki
-
-      if (title === null || content === null) {
+      if (editTitle === null || editContent === null) {
         console.log("Update cancelled by user.");
         return;
       }
-
-      let updatedObj = {
-        title,
-        content,
+      const editNote = {
+        title: editTitle,
+        content: editContent,
+        isDraft: false,
       };
-      const response = await axios.put(
+
+      await axios.put(
         `http://localhost:8000/api/notes/${documentId}`,
-        updatedObj,
+        editNote,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
+      setEditTitle("");
+      setEditContent("");
+      setEditNote_id(null);
       getNotes();
     } catch (error) {
       console.log("Save Failed:", error.message);
@@ -137,6 +129,7 @@ const draftNotes = data.filter(note => note.isDraft).length;
     }
   };
 
+// Delete Note
   let deleteNote = async (documentId) => {
     try {
       const response = await axios.delete(
@@ -154,28 +147,37 @@ const draftNotes = data.filter(note => note.isDraft).length;
     }
   };
 
-const saveDraft = async () => {
-  try {
-    const draftObj = { title, content, isDraft: true };
+// Handle Draft Note
+  const saveDraft = async () => {
+    try {
+      const draftObj = { title, content, isDraft: true };
 
-    if (draftId) {
-      // 🟡 Update existing draft
-      await axios.put(`http://localhost:8000/api/notes/${draftId}`, draftObj, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      console.log("Draft updated!");
-    } else {
-      // 🟢 Create new draft
-      const response = await axios.post("http://localhost:8000/api/notes", draftObj, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setDraftId(response.data.data._id);
-      console.log("Draft created!");
+      if (draftId) {
+        // 🟡 Update existing draft
+        await axios.put(
+          `http://localhost:8000/api/notes/${draftId}`,
+          draftObj,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        console.log("Draft updated!");
+      } else {
+        // 🟢 Create new draft
+        const response = await axios.post(
+          "http://localhost:8000/api/notes",
+          draftObj,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setDraftId(response.data.data._id);
+        console.log("Draft created!");
+      }
+    } catch (error) {
+      console.log("Draft save failed:", error.message);
     }
-  } catch (error) {
-    console.log("Draft save failed:", error.message);
-  }
-};
+  };
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -187,85 +189,90 @@ const saveDraft = async () => {
     return () => clearTimeout(timeout);
   }, [title, content]);
 
+  
   return (
     <>
       <Navbar />
       <div className="min-h-[calc(100vh-64px)] bg-gray-50 p-4 sm:p-8">
         <div className="max-w-7xl mx-auto space-y-8">
-          {/* Header and Action Button */}
-          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-4 border-gray-200">
-            <h1 className="text-3xl font-extrabold text-gray-900 mb-4 sm:mb-0">
-              Sticky Note Dashboard
-            </h1>
-          </header>
-
-          {/* Notes Statistics / Summary Section */}
-          <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {stats.map((stat) => (
-              <div
-                key={stat.title}
-                className={`p-6 rounded-xl shadow-md border ${stat.bg} border-gray-200 transition duration-300 hover:shadow-lg`}
-              >
-                <p className="text-sm font-medium text-gray-500">
-                  {stat.title}
-                </p>
-                <p className={`mt-1 text-4xl font-bold ${stat.color}`}>
-                  {stat.value}
-                </p>
-              </div>
-            ))}
-          </section>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-4 sm:px-8 py-6">
-            {data.map((item) => (
-              <NotesCard
-                key={item._id}
-                id={item._id}
-                title={item.title}
-                content={item.content}
-                date={item.date}
-                funEdit={editNotes}
-                funDeleteNote={deleteNote}
-              />
-            ))}
-          </div>
+          <Header data={data} isDraftData={isDraftData} />
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Notes List</h2>
-          {dummyCard ? (
-            <section>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-4 sm:px-8 py-6">
+            {data.map((item) => {
+              return item._id  ===  editNote_id ? (
+                // Note Edit Section
                 <div
+                  key={item._id}
                   className="relative flex flex-col justify-between p-5 rounded-xl shadow-md min-h-[220px] transition duration-300 hover:shadow-xl transform hover:-translate-y-1 border border-gray-300 bg-yellow-200"
                   style={{ transform: "rotate(2deg)" }}
                 >
-                  {/* Title Input */}
                   <input
                     type="text"
                     placeholder="Enter note title..."
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
                     className="text-lg font-bold text-gray-900 mb-2 border-b border-gray-400 pb-1 bg-transparent outline-none w-full"
                   />
-
-                  {/* Content Input */}
                   <textarea
                     placeholder="Write something..."
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
                     className="flex-1 text-gray-800 text-sm leading-relaxed overflow-hidden mb-3 bg-transparent outline-none w-full resize-none"
                   />
-
-                  {/* Save Button */}
                   <button
-                    onClick={handleSaveNote}
+                    onClick={() => {
+                      saveEditNote(item._id);
+                    }}
                     className="bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
                   >
                     Save Note
                   </button>
                 </div>
+              ) : (
+                // Render Notes Section
+                <NotesCard
+                  key={item._id}
+                  id={item._id}
+                  title={item.title}
+                  content={item.content}
+                  date={item.date}
+                  funEdit={editNotes}
+                  funDeleteNote={deleteNote}
+                  item={item}
+                />
+              );
+            })}
+            {/* Condiction Rederning ----- cardBtn or Card Feild */}
+            {dummyCard ? (
+              // New Note Create Section
+              <div
+                className="relative flex flex-col justify-between p-5 rounded-xl shadow-md min-h-[220px] transition duration-300 hover:shadow-xl transform hover:-translate-y-1 border border-gray-300 bg-yellow-200"
+                style={{ transform: "rotate(2deg)" }}
+              >
+                <input
+                  type="text"
+                  placeholder="Enter note title..."
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="text-lg font-bold text-gray-900 mb-2 border-b border-gray-400 pb-1 bg-transparent outline-none w-full"
+                />
+                <textarea
+                  placeholder="Write something..."
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="flex-1 text-gray-800 text-sm leading-relaxed overflow-hidden mb-3 bg-transparent outline-none w-full resize-none"
+                />
+                <button
+                  onClick={() => {
+                    saveNewNote();
+                  }}
+                  className="bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+                >
+                  Save Note
+                </button>
               </div>
-            </section>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            ) : (
+              // New Note Button
               <div
                 className={`relative flex flex-col justify-between p-5 rounded-xl shadow-md min-h-[220px] transition duration-300 hover:shadow-xl transform hover:-translate-y-1 border border-transparent `}
                 style={{ transform: "rotate(2deg)" }}
@@ -273,7 +280,7 @@ const saveDraft = async () => {
                 <button
                   type="button"
                   className="flex items-center justify-center min-h-[180px] border-2 border-dashed border-gray-300 rounded-xl hover:border-blue-400 transition duration-300 text-gray-500 hover:text-blue-600 w-full"
-                  onClick={handleAddNewNoteClick} // <-- onClick function applied here
+                  onClick={active_new_note_creaction_card}
                 >
                   <div className="text-center p-4">
                     <p className="text-lg font-semibold">Click to Add Note</p>
@@ -294,8 +301,8 @@ const saveDraft = async () => {
                   </div>
                 </button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </>

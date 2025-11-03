@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.route('/notes').post(checkAuth,createNote).get(checkAuth,getAllNotes)
 
-router.route('/notes/:id').put(checkAuth, updateNote).delete(checkAuth, deleteNote) 
+router.route('/notes/:id').put(checkAuth,updateNote).delete(checkAuth, deleteNote) 
    
     
 

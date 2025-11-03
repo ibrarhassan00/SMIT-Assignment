@@ -23,6 +23,7 @@ const userShema = new mongoose.Schema({
         default:Date.now
     }
 })
+// ,{timestamps:true}
 
 
 const UserModel = mongoose.model('user',userShema)

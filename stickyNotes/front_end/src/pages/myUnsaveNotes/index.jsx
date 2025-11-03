@@ -1,100 +1,142 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import Navbar from "../../components/navbar";
+import NotesCard from "../../components/notesCard";
+import axios from "axios";
 
-const MyDraftNotes = () => {
+const MyNotes = () => {
   const [data, setData] = useState([]);
-  const [editedNotes, setEditedNotes] = useState({}); // store editable note data
+  //Edit Section
+  const [editNote_id, setEditNote_id] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+
   const token = localStorage.getItem("uid");
 
-  // 🔹 Fetch drafts
-  const getDrafts = async () => {
+  const getNotes = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/notes?isDraft=true", {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await axios.get("http://localhost:8000/api/notes", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-
-    const filteredNotes = res.data.data.filter(note => note.isDraft === true);
-
-setData(filteredNotes);
-
-
-    } catch (err) {
-      console.log("Error:", err.message);
+      const filteredNotes = response.data.data.filter(
+        (note) => note.isDraft === true
+      );
+      setData(filteredNotes);
+    } catch (error) {
+      console.log("Signup Failed:", error.message);
+      return alert("Error:", error.message);
     }
   };
 
   useEffect(() => {
-    getDrafts();
+    getNotes();
   }, []);
 
-  // 🔹 Handle input change
-  const handleChange = (id, field, value) => {
-    setEditedNotes((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], [field]: value },
-    }));
+  // Edit Section
+  let editNotes = (item) => {
+    setEditNote_id(item._id);
+    setEditTitle(item.title);
+    setEditContent(item.content);
   };
-
-  // 🔹 Save draft -> mark isDraft:false
-  const handleSaveNote = async (id) => {
-    const note = editedNotes[id] || {};
+  const saveEditNote = async (documentId) => {
     try {
+      if (editTitle === null || editContent === null) {
+        console.log("Update cancelled by user.");
+        return;
+      }
+      const editNote = {
+        title: editTitle,
+        content: editContent,
+        isDraft: false,
+      };
+
       await axios.put(
-        `http://localhost:8000/api/notes/${id}`,
-        { ...note, isDraft: false },
-        { headers: { Authorization: `Bearer ${token}` } }
+        `http://localhost:8000/api/notes/${documentId}`,
+        editNote,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
-      getDrafts(); // refresh list
+      setEditTitle("");
+      setEditContent("");
+      setEditNote_id(null);
+      getNotes();
     } catch (error) {
       console.log("Save Failed:", error.message);
-      alert("Error: " + error.message);
+      alert("Error:", error.message);
+    }
+  };
+
+  let deleteNote = async (documentId) => {
+    try {
+      const response = await axios.delete(
+        `http://localhost:8000/api/notes/${documentId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      getNotes();
+    } catch (error) {
+      console.log("Save Failed:", error.message);
+      alert("Error:", error.message);
     }
   };
 
   return (
     <>
       <Navbar />
-      <div className="p-8">
-        <h1 className="text-2xl font-bold mb-6">My Draft Notes</h1>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {data.map((item) => {
-            const note = editedNotes[item._id] || item;
-
-            return (
-              <div
-                key={item._id}
-                className="flex flex-col justify-between p-5 rounded-xl shadow-md bg-yellow-100 min-h-[250px] w-full hover:shadow-lg transition"
+      <h2 className="text-2xl font-bold text-gray-800 mb-4 p-5">Notes List</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-4 sm:px-8 py-6">
+        {data.map((item) => {
+          return item._id === editNote_id ? (
+            // Note Edit Section
+            <div
+              key={item._id}
+              className="relative flex flex-col justify-between p-5 rounded-xl shadow-md min-h-[220px] transition duration-300 hover:shadow-xl transform hover:-translate-y-1 border border-gray-300 bg-yellow-200"
+              style={{ transform: "rotate(2deg)" }}
+            >
+              <input
+                type="text"
+                placeholder="Enter note title..."
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                className="text-lg font-bold text-gray-900 mb-2 border-b border-gray-400 pb-1 bg-transparent outline-none w-full"
+              />
+              <textarea
+                placeholder="Write something..."
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="flex-1 text-gray-800 text-sm leading-relaxed overflow-hidden mb-3 bg-transparent outline-none w-full resize-none"
+              />
+              <button
+                onClick={() => {
+                  saveEditNote(item._id);
+                }}
+                className="bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
               >
-                <input
-                  type="text"
-                  value={note.title}
-                  onChange={(e) => handleChange(item._id, "title", e.target.value)}
-                  className="text-lg font-bold text-gray-900 mb-2 border-b border-gray-400 pb-1 bg-transparent outline-none w-full"
-                  placeholder="Enter note title..."
-                />
-
-                <textarea
-                  value={note.content}
-                  onChange={(e) => handleChange(item._id, "content", e.target.value)}
-                  className="flex-1 text-gray-800 text-sm leading-relaxed mb-3 bg-transparent outline-none w-full resize-none"
-                  placeholder="Write something..."
-                />
-
-                <button
-                  onClick={() => handleSaveNote(item._id)}
-                  className="mt-2 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition w-full"
-                >
-                  Save
-                </button>
-              </div>
-            );
-          })}
-        </div>
+                Save Note
+              </button>
+            </div>
+          ) : (
+            // Render Notes Section
+            <NotesCard
+              key={item._id}
+              id={item._id}
+              title={item.title}
+              content={item.content}
+              date={item.date}
+              funEdit={editNotes}
+              funDeleteNote={deleteNote}
+              item={item}
+            />
+          );
+        })}
       </div>
     </>
   );
 };
 
-export default MyDraftNotes;
+export default MyNotes;

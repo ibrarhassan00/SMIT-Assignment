@@ -14,11 +14,11 @@ export const userRegister = async (req, res) => {
         }
 
         const isUserExist = await UserModel.findOne({ email });
-        console.log(isUserExist); /// yahan araha hai emty arry exist email per bhi 
+        // console.log(isUserExist); /// yahan araha hai emty arry exist email per bhi 
         if (isUserExist) {
             return res.json({
                 status: false,
-                message: "Email Already Exist ibrar" // vaule false par y return hoaraha har bar
+                message: "Email Already Exist" // vaule false par y return hoaraha har bar
             })
         }
         const hash = await bcrypt.hash(password, 10);
@@ -54,7 +54,7 @@ export const userLogin = async (req, res) => {
         if (!user) {
             return res.json({
                 status: false,
-                message: "Email Password Invalid ibrar"
+                message: "Email Password Invalid"
             })
         }
         const match = await bcrypt.compare(password, user.password);
